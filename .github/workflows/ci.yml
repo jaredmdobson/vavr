@@ -1,8 +1,7 @@
 name: Java CI
 
-on:
-  pull_request:
-    branches: [ main ]
+on: [push, pull_request]
+
 
 env:
   OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
