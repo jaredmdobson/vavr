@@ -2,6 +2,9 @@ name: Java CI
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
@@ -54,3 +57,6 @@ jobs:
       - name: Deploy
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.deploy
         run: ./gradlew uploadArchives -PossrhUsername="${OSSRH_USERNAME}" -PossrhPassword="${OSSRH_PASSWORD}"
+      - uses: release-drafter/release-drafter@v5.3.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
