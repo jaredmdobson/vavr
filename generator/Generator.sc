@@ -3940,10 +3940,10 @@ object Generator {
     def first: String = s.substring(0, 1)
 
     // converts first char of s to upper case. throws if string is empty
-    def firstUpper: String = s(0).toUpper + s.substring(1)
+    def firstUpper: String = s"${s(0).toUpper}${s.substring(1)}"
 
     // converts first char of s to lower case. throws if string is empty
-    def firstLower: String = s(0).toLower + s.substring(1)
+    def firstLower: String = s"${s(0).toLower}${s.substring(1)}"
   }
 
   implicit class BooleanExtensions(condition: Boolean) {

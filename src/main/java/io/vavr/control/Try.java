@@ -1830,10 +1830,17 @@ public abstract class Try<T> implements Iterable<T>, io.vavr.Value<T>, Serializa
 interface TryModule {
 
     static boolean isFatal(Throwable throwable) {
-        return throwable instanceof InterruptedException
+        int versionNumber = Runtime.version().feature();
+        if (versionNumber < 20) {
+            return throwable instanceof InterruptedException
                 || throwable instanceof LinkageError
                 || throwable instanceof ThreadDeath
                 || throwable instanceof VirtualMachineError;
+        } else {
+            return throwable instanceof InterruptedException
+                || throwable instanceof LinkageError
+                || throwable instanceof VirtualMachineError;
+        }
     }
 
     // DEV-NOTE: we do not plan to expose this as public API

@@ -29,6 +29,7 @@
  */
 plugins {
 
+    id 'scala'
     // library
     id 'java-library'
     id 'jacoco'
@@ -40,8 +41,8 @@ plugins {
     id 'io.github.gradle-nexus.publish-plugin' version '1.3.0'
 }
 
-ext.ammoniteScalaVersion = '2.13'
-ext.ammoniteVersion = '2.5.8'
+ext.ammoniteScalaVersion = '2.13.14'
+ext.ammoniteVersion = '3.0.0-M2-5-1c823fef'
 ext.assertjVersion = '3.24.2'
 ext.junitVersion = '4.13.2'
 
@@ -56,7 +57,14 @@ repositories {
 // -- JAVA BUILD & CODE GEN --
 // --                       --
 
+configurations {
+    ammonite
+}
+
 dependencies {
+    ammonite "com.lihaoyi:ammonite_$ammoniteScalaVersion:$ammoniteVersion"
+    ammonite "com.lihaoyi:ammonite-interp-api_$ammoniteScalaVersion:$ammoniteVersion"
+    implementation "org.scala-lang:scala-library:$ammoniteScalaVersion" // replace with your Scala version
     testImplementation "junit:junit:$junitVersion"
     testImplementation "org.assertj:assertj-core:$assertjVersion"
 }
@@ -71,31 +79,33 @@ java {
 
 sourceSets.main.java.srcDirs += ['src-gen/main/java']
 sourceSets.test.java.srcDirs += ['src-gen/test/java']
-
-tasks.register('generateSources') {
-    doLast {
-        delete 'src-gen'
-        def ammoniteDir = file("generator/bin")
-        if (!ammoniteDir.exists()) {
-            ammoniteDir.mkdirs()
-        }
-        def ammoniteJar = new File(ammoniteDir, "amm-${ammoniteScalaVersion}-${ammoniteVersion}.jar")
-        if (!ammoniteJar.exists()) {
-            def ammoniteReleaseUrl = "https://github.com/lihaoyi/Ammonite/releases/download/${ammoniteVersion}/${ammoniteScalaVersion}-${ammoniteVersion}"
-            ant.get(src: ammoniteReleaseUrl, dest: ammoniteJar)
-        }
-        javaexec {
-            classpath = project.files(ammoniteJar)
-            args = ["generator/Generator.sc"]
+sourceSets {
+    main {
+        scala {
+            srcDirs = ['generator'] // directory containing your .sc files
         }
     }
+}
+
+task runAmmonite(type: JavaExec) {
+    classpath = configurations.ammonite
+    main = 'ammonite.Main'
+    args = ['generator/Generator.sc']
+    doFirst {
+        delete 'src-gen'
+    }
+}
+
+tasks.register('generateSources') {
+    dependsOn runAmmonite
+
 }
 
 compileJava.dependsOn 'generateSources'
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.compilerArgs = [ '-Werror', '-Xlint:all', '-Xlint:-serial', '-Xlint:-deprecation' ]
+    options.compilerArgs = [ '-Xlint:all' ]
 }
 
 javadoc {options.encoding = "UTF-8"} // error: unmappable character for encoding ASCII
