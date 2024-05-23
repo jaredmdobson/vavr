@@ -1,0 +1,57 @@
+name: Java CI
+
+on:
+  pull_request:
+    branches: [ main ]
+
+env:
+  OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+  OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+
+jobs:
+  validation:
+    name: "Gradle wrapper validation"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gradle/wrapper-validation-action@v3.3.2
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          java-version: 8
+          distribution: 'temurin'
+          cache: gradle
+      - name: Check for uncommitted changes
+        run: if [ -n "$(git status -su src-gen)" ]; then exit 1; fi
+      - name: Build and Test
+        run: gradle check --info
+      #There is no sense in running it on 6 more servers if it doesn't work on the first one
+  build:
+    needs: validation
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [11, 16, 17, 18, 19, 21]
+        include:
+          - java: 21
+            deploy: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+          cache: gradle
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Build with Gradle
+        run: ./gradlew check --info -Dorg.gradle.java.home="${JAVA_HOME}"
+      - name: Check for uncommitted changes
+        run: if [ -n "$(git status -su src-gen)" ]; then exit 1; fi
+      - name: Codecov
+        if: matrix.deploy
+        run: bash <(curl -s https://codecov.io/bash)
+      - name: Deploy
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.deploy
+        run: ./gradlew uploadArchives -PossrhUsername="${OSSRH_USERNAME}" -PossrhPassword="${OSSRH_PASSWORD}"
