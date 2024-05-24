@@ -6031,7 +6031,9 @@ public final class API {
     /**
      * Scala-like structural pattern matching for Java. Instances are obtained via {@link API#Match(Object)}.
      * @param <T> type of the object that is matched
+     * @deprecated use Java Switch instead
      */
+    @Deprecated
     public static final class Match<T> {
 
         private final T value;

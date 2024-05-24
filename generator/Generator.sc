@@ -1056,7 +1056,9 @@ def generateMainClasses(): Unit = {
           /**
            * Scala-like structural pattern matching for Java. Instances are obtained via {@link API#Match(Object)}.
            * @param <T> type of the object that is matched
+           * @deprecated use Java Switch instead: https://docs.oracle.com/en/java/javase/21/language/pattern-matching-switch-expressions-and-statements.html
            */
+          @Deprecated
           public static final class Match<T> {
 
               private final T value;
